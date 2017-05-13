@@ -30,6 +30,12 @@ typedef struct pede
    int d; // Direction of the centipede 
 } pede;
 
+typedef struct shot
+{
+  int y, x;
+  bool move;
+} shot;
+
 int main()
 {
    /* Game defaults */
@@ -44,44 +50,61 @@ int main()
    /* Game defaults end */
    
    /* Initialise player and centipede co-ordinates */ 
+   
    player p1 = {
-                yMax - 3, xMax/2 // Set player at middle-bottom of screen
+                 yMax - 3, xMax/2 // Set player at middle-bottom of screen
                };
+               
    pede c = {
-             0, 0, 1 // Set centipede at top left 
-            };
+              0, 0, 1 // Set centipede at top left 
+            };    
+            
+   shot s = {
+              false
+            };  
+                         
 
    bool fin = false; // Used to end the game 
 
    /* Main game loop */
    
-   for(nodelay(stdscr, 1); !fin; usleep(7000))
-   {
-      c.x += c.d; // Sets the centipede movement
-      erase(); // Deletes character trail of centipede
+   for(nodelay(stdscr, 1); !fin; usleep(30000))
+   {      
+         c.x += c.d; // Sets the centipede movement
+         erase(); // Deletes character trail of centipede
       
-      /* Direction controls */
-      
-      if(c.x == xMax) // Right edge of screen
-      {
-       c.d *= -1; // Change direction
-       c.y += 1;  // Move down the screen
-      }
-      else if (c.x == 0) // Left edge of screen
-      {
-        c.d = 1; 
-        c.y += 1;
-      }
+         /* Direction controls */
+         
+         if(c.x == xMax-3) // Right edge of screen
+         {
+          c.d *= -1; // Change direction
+          c.y += 1;  // Move down the screen
+         }
+         else if (c.x == 0) // Left edge of screen
+         {
+           c.d = 1; 
+           c.y += 1;
+         }
       
          if(c.x == p1.x && c.y == p1.y)
          {
             fin = true; // End the game if the centipede reaches the player
          }
-      
+         else if (c.x == s.x && c.y == s.y)
+         {
+            fin = true; // End the game if the centipede reaches the player
+         }
+         
+         if(s.move == true)
+         {  
+               s.y--;
+               mvprintw(s.y, s.x, "*");
+         }
      
          /* Take player input */ 
          switch (getch())
-         {                           // Move:
+         {                           
+                                     /* Move: */
                   case 'w':
                             p1.y--;  // Up
                             break;
@@ -93,6 +116,12 @@ int main()
                             break;
                   case 'd':  
                             p1.x++; // Right
+                            break;
+                            
+                  case ' ':
+                            s.move = true;
+                            s.y = p1.y;
+                            s.x = p1.x+1;
                             break;
          }
           
