@@ -28,6 +28,8 @@ typedef struct pede
 {
    int y, x;
    int d; // Direction of the centipede 
+   char body[10];
+   int end;
 } pede;
 
 typedef struct shot
@@ -45,18 +47,19 @@ int main()
    curs_set(0); // Deactivate cursor
    
    int yMax = 44, xMax = 116;
-  // getmaxyx(stdscr, yMax, xMax); // Get screen boundaries
+   // getmaxyx(stdscr, yMax, xMax);
+   int score = 0, endScore;
    
    /* Game defaults end */
    
-   /* Initialise player and centipede co-ordinates */ 
+   /* Initialise player, centipede and bullets */ 
    
    player p1 = {
                  yMax - 3, xMax/2 // Set player at middle-bottom of screen
                };
                
    pede c = {
-              0, 0, 1 // Set centipede at top left 
+              1, 1, 1, "}@@@@@@@@@", 9 // Set centipede at top left 
             };    
             
    shot s = {
@@ -64,42 +67,53 @@ int main()
             };  
                          
 
-   bool fin = false; // Used to end the game 
+   bool gameOver = false; // Used to end the game 
 
    /* Main game loop */
-   
-   for(nodelay(stdscr, 1); !fin; usleep(30000))
+   for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
-         c.x += c.d; // Sets the centipede movement
-         erase(); // Deletes character trail of centipede
+        score++; // Rolling score over time
+        c.x += c.d; // Sets the centipede movement
+        erase(); // Deletes character trail of centipede
       
-         /* Direction controls */
+         /* Centipede Direction controls */
          
-         if(c.x == xMax-3) // Right edge of screen
+         if(c.x == xMax-6) // Right edge of screen
          {
           c.d *= -1; // Change direction
           c.y += 1;  // Move down the screen
          }
-         else if (c.x == 0) // Left edge of screen
-         {
-           c.d = 1; 
-           c.y += 1;
-         }
+            else if (c.x == 0) // Left edge of screen
+            {
+              c.d = 1;
+              c.y += 1;
+            }
       
-         if(c.x == p1.x && c.y == p1.y)
+         if(c.x == p1.x && c.y == p1.y || c.end == -1)
          {
-            fin = true; // End the game if the centipede reaches the player
-         }
-         else if (c.x == s.x && c.y == s.y)
+            gameOver = true; // End game if the centipede reaches the player or is shot to death
+            endScore = score; // Save the score 
+         } 
+         
+         if (c.x == s.x && c.y == s.y)
          {
-            fin = true; // End the game if the centipede reaches the player
+            c.body[c.end] = 0; // Remove a body piece if the centipede's head is shot
+            c.end -= 1;
+            score += 1000;
          }
+             
+               else if (c.x+1 == s.x && c.y+1 == s.y || c.x+2 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+3 == s.x && c.y == s.y || c.x+4 == s.x && c.y == s.y || c.x+5 == s.x && c.y == s.y || c.x+6 == s.x && c.y == s.y || c.x+7 == s.x && c.y == s.y || c.x+8 == s.x && c.y == s.y || c.x+9 == s.x && c.y == s.y) 
+               {
+                  c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
+                  c.end -= 1;
+                  score += 100;
+               }
          
          if(s.move == true)
          {  
                s.y--;
                mvprintw(s.y, s.x, "*");
-         }
+         } 
      
          /* Take player input */ 
          switch (getch())
@@ -149,9 +163,12 @@ int main()
      
         /* Print and display characters */
         mvprintw(p1.y, p1.x, "<o>");
-        mvprintw(c.y, c.x, "}@@@@@{");
+        mvaddstr(c.y, c.x, c.body);
+        mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | Score: %d", score);
+   
         refresh();
    }
    
    endwin(); // End ncurses
+   printf("Game over! Your score was %d \n", endScore);
 }
