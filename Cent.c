@@ -1,5 +1,6 @@
 #include <ncurses.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 /*
@@ -11,9 +12,7 @@
            This is a recreation of the game in C using the ncurses library.
            
            To play, compile and run this file.
-           
-           
-        
+               
               
 */
 
@@ -38,6 +37,12 @@ typedef struct shot
   bool move;
 } shot;
 
+typedef struct mushroom
+{
+  int y, x;
+  char type[6];
+} mushroom;
+
 int main()
 {
    /* Game defaults */
@@ -46,9 +51,15 @@ int main()
    noecho(); // Stop typing input
    curs_set(0); // Deactivate cursor
    
+   start_color();
+   init_pair(1, COLOR_RED, COLOR_BLACK);
+   init_pair(2, COLOR_GREEN, COLOR_BLACK);
+   init_pair(3, COLOR_BLUE, COLOR_BLACK);  
+   
    int yMax = 44, xMax = 116;
    // getmaxyx(stdscr, yMax, xMax);
    int score = 0, endScore;
+   srand(time(NULL));
    
    /* Game defaults end */
    
@@ -64,21 +75,41 @@ int main()
             
    shot s = {
               false
-            };  
-                         
+            }; 
+             
+   mushroom m[30] = {
+                     10, 10, "5"
+                };
+   
+    for(int i = 1; i < 30; i++)
+    {
+      m[i].y = i;
+      m[i].x = rand() % 115;
+    }                       
 
    bool gameOver = false; // Used to end the game 
-
+   
+   wbkgd(stdscr, COLOR_PAIR(1));
+   
+   
    /* Main game loop */
    for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
         score++; // Rolling score over time
         c.x += c.d; // Sets the centipede movement
         erase(); // Deletes character trail of centipede
+        
+        
+        attron(COLOR_PAIR(3));
+        for(int i = 0; i < 30; i++)
+        {
+            mvprintw(m[i].y, m[i].x, "5"); // Mushrooms, blue
+        }  
+        attroff(COLOR_PAIR(3));
       
          /* Centipede Direction controls */
          
-         if(c.x == xMax-6) // Right edge of screen
+         if(c.x == xMax-9) // Right edge of screen
          {
           c.d *= -1; // Change direction
           c.y += 1;  // Move down the screen
@@ -89,6 +120,9 @@ int main()
               c.y += 1;
             }
       
+          
+         /* Centipede collision detection */
+          
          if(c.x == p1.x && c.y == p1.y || c.end == -1)
          {
             gameOver = true; // End game if the centipede reaches the player or is shot to death
@@ -102,17 +136,47 @@ int main()
             score += 1000;
          }
              
-               else if (c.x+1 == s.x && c.y+1 == s.y || c.x+2 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+3 == s.x && c.y == s.y || c.x+4 == s.x && c.y == s.y || c.x+5 == s.x && c.y == s.y || c.x+6 == s.x && c.y == s.y || c.x+7 == s.x && c.y == s.y || c.x+8 == s.x && c.y == s.y || c.x+9 == s.x && c.y == s.y) 
+               else if (c.x+1 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+3 == s.x && c.y == s.y || c.x+4 == s.x && c.y == s.y || c.x+5 == s.x && c.y == s.y || c.x+6 == s.x && c.y == s.y || c.x+7 == s.x && c.y == s.y || c.x+8 == s.x && c.y == s.y || c.x+9 == s.x && c.y == s.y) 
                {
                   c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
                   c.end -= 1;
                   score += 100;
                }
+         /* Mushroom collision detection */
+         for(int i = 0; i < 30; i++)
+         {
+          if (s.x == m[i].x && s.y == m[i].y)
+          {
+             mvprintw(m[i].y, m[i].x, "@");
+          }
+          if (c.d == 1)
+          { 
+             if(c.x+c.end == m[i].x && c.y == m[i].y)
+             { 
+               c.d *= -1; // Change direction
+               c.y += 1;  // Move down the screen
+             } 
+          }
+          else 
+          {
+            if (c.x == m[i].x && c.y == m[i].y)
+            {
+               c.d *= -1; // Change direction
+               c.y += 1;
+            }
+          }
+          
+         }
+         
+         
+         /* Shooting */
          
          if(s.move == true)
          {  
                s.y--;
+               attron(COLOR_PAIR(2));
                mvprintw(s.y, s.x, "*");
+               attroff(COLOR_PAIR(2));
          } 
      
          /* Take player input */ 
@@ -132,6 +196,7 @@ int main()
                             p1.x++; // Right
                             break;
                             
+                                    /* Shoot: */
                   case ' ':
                             s.move = true;
                             s.y = p1.y;
@@ -140,6 +205,7 @@ int main()
          }
           
          /* Vertical player boundaries */
+         
          switch (p1.y)
          {
            case 39: 
@@ -162,13 +228,26 @@ int main()
          }
      
         /* Print and display characters */
-        mvprintw(p1.y, p1.x, "<o>");
-        mvaddstr(c.y, c.x, c.body);
+        
+        attron(COLOR_PAIR(2));
+        mvprintw(p1.y, p1.x, "<o>"); // Player, green 
+        attroff(COLOR_PAIR(2));
+        mvaddstr(c.y, c.x, c.body); // Centipede, red
+        
         mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | Score: %d", score);
-   
+        
+        for(int i = 0; i < 116; i++)
+        {
+         mvprintw(38, i, "_"); // Barrier, red
+         mvprintw(i, 116, "|");
+        }
+        
+        
         refresh();
    }
    
    endwin(); // End ncurses
    printf("Game over! Your score was %d \n", endScore);
+   
+   
 }
