@@ -81,10 +81,14 @@ int main()
                      10, 10, 1
                 };
    
-    for(int i = 1; i < 30; i++)
+    for(int i = 0; i < 30; i++)
     {
-      m[i].y = i; // Set mushrooms on each row
+      m[i].y = i+4; // Set mushrooms on each row
       m[i].x = rand() % 115; // Set x position as random
+      if (m[i].x == m[i-1].x || m[i].x+1 == m[i-1].x || m[i].x-1 == m[i-1].x)
+      {
+         m[i].x = rand() % 115; // Reroll the xpos of the mushroom if too close to the one before
+      }
       m[i].health = 5;                    
     }       
     
@@ -133,6 +137,11 @@ int main()
          
          if (c.x == s.x && c.y == s.y)
          {
+            // Reset bullet upon hit
+            s.move = false;
+            s.x = p1.x;
+            s.y = p1.y;
+            
             c.body[c.end] = 0; // Remove a body piece if the centipede's head is shot
             c.end -= 1;
             score += 1000;
@@ -140,6 +149,12 @@ int main()
              
                else if (c.x+1 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+3 == s.x && c.y == s.y || c.x+4 == s.x && c.y == s.y || c.x+5 == s.x && c.y == s.y || c.x+6 == s.x && c.y == s.y || c.x+7 == s.x && c.y == s.y || c.x+8 == s.x && c.y == s.y || c.x+9 == s.x && c.y == s.y) 
                {
+                   // Reset bullet upon hit
+                  s.move = false;
+                  s.x = p1.x;
+                  s.y = p1.y;
+            
+               
                   c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
                   c.end -= 1;
                   score += 100;
@@ -149,10 +164,15 @@ int main()
          
          for(int i = 0; i < 30; i++)
          {
-             // Bullets 
+             // Bullet detection
              
              if (s.x == m[i].x && s.y == m[i].y)
              {
+                // Reset bullet upon hit
+                s.move = false;
+                s.x = p1.x;
+                s.y = p1.y;
+                
                 mvprintw(m[i].y, m[i].x, "~");
                 m[i].health--;
                 score += 10;
@@ -163,7 +183,7 @@ int main()
                 }
              }
              
-             // Centipede 
+             // Centipede detection
              
              if (c.d == 1)
              { 
