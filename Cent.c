@@ -40,7 +40,7 @@ typedef struct shot
 typedef struct mushroom
 {
   int y, x;
-  int health[5];
+  int health;
 } mushroom;
 
 int main()
@@ -85,7 +85,7 @@ int main()
     {
       m[i].y = i; // Set mushrooms on each row
       m[i].x = rand() % 115; // Set x position as random
-      m[i].health[4] = 5;                    
+      m[i].health = 5;                    
     }       
     
    bool gameOver = false; // Used to end the game 
@@ -96,7 +96,7 @@ int main()
    
    for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
-        score++; // Rolling score over time
+        //score++; // Rolling score over time
         c.x += c.d; // Sets the centipede movement
         erase(); // Deletes character trail of centipede
               
@@ -105,7 +105,7 @@ int main()
         attron(COLOR_PAIR(3));
         for(int i = 0; i < 30; i++)
         {
-            mvprintw(m[i].y, m[i].x, "5"); // Mushrooms, blue
+            mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
         }  
         attroff(COLOR_PAIR(3));
       
@@ -144,29 +144,43 @@ int main()
                   c.end -= 1;
                   score += 100;
                }
+               
          /* Mushroom collision detection */
+         
          for(int i = 0; i < 30; i++)
          {
-          if (s.x == m[i].x && s.y == m[i].y)
-          {
-             mvprintw(m[i].y, m[i].x, "d");
-          }
-          if (c.d == 1)
-          { 
-             if(c.x+c.end == m[i].x && c.y == m[i].y)
+             // Bullets 
+             
+             if (s.x == m[i].x && s.y == m[i].y)
+             {
+                mvprintw(m[i].y, m[i].x, "~");
+                m[i].health--;
+                score += 10;
+                if (m[i].health == 0)
+                { 
+                  m[i] = m[i+1]; // Destroys the mushroom
+                  score += 20;
+                }
+             }
+             
+             // Centipede 
+             
+             if (c.d == 1)
              { 
-               c.d *= -1; // Change direction
-               c.y += 1;  // Move down the screen
-             } 
-          }
-          else 
-          {
-            if (c.x == m[i].x && c.y == m[i].y)
-            {
-               c.d *= -1; // Change direction
-               c.y += 1;
-            }
-          }
+                if(c.x+c.end == m[i].x && c.y == m[i].y)
+                { 
+                  c.d *= -1; // Change centipede direction
+                  c.y += 1;  // Move down the screen
+                } 
+             }
+             else 
+             {
+               if (c.x == m[i].x && c.y == m[i].y)
+               {
+                  c.d *= -1; // Change centipede direction
+                  c.y += 1; // Move down the screen
+               }
+             }
           
          }
          
