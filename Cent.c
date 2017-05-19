@@ -40,7 +40,7 @@ typedef struct shot
 typedef struct mushroom
 {
   int y, x;
-  char type[6];
+  int health[5];
 } mushroom;
 
 int main()
@@ -63,7 +63,7 @@ int main()
    
    /* Game defaults end */
    
-   /* Initialise player, centipede and bullets */ 
+   /* Initialise player, centipede, mushrooms and bullets */ 
    
    player p1 = {
                  yMax - 3, xMax/2 // Set player at middle-bottom of screen
@@ -78,27 +78,29 @@ int main()
             }; 
              
    mushroom m[30] = {
-                     10, 10, "5"
+                     10, 10, 1
                 };
    
     for(int i = 1; i < 30; i++)
     {
-      m[i].y = i;
-      m[i].x = rand() % 115;
-    }                       
-
+      m[i].y = i; // Set mushrooms on each row
+      m[i].x = rand() % 115; // Set x position as random
+      m[i].health[4] = 5;                    
+    }       
+    
    bool gameOver = false; // Used to end the game 
    
-   wbkgd(stdscr, COLOR_PAIR(1));
-   
-   
+   wbkgd(stdscr, COLOR_PAIR(1)); // Background colour
+     
    /* Main game loop */
+   
    for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
         score++; // Rolling score over time
         c.x += c.d; // Sets the centipede movement
         erase(); // Deletes character trail of centipede
-        
+              
+        /* Add mushrooms */
         
         attron(COLOR_PAIR(3));
         for(int i = 0; i < 30; i++)
@@ -147,7 +149,7 @@ int main()
          {
           if (s.x == m[i].x && s.y == m[i].y)
           {
-             mvprintw(m[i].y, m[i].x, "@");
+             mvprintw(m[i].y, m[i].x, "d");
           }
           if (c.d == 1)
           { 
@@ -180,6 +182,7 @@ int main()
          } 
      
          /* Take player input */ 
+         
          switch (getch())
          {                           
                                      /* Move: */
@@ -192,6 +195,7 @@ int main()
                   case 'a': 
                             p1.x--;  // Left
                             break;
+                           
                   case 'd':  
                             p1.x++; // Right
                             break;
@@ -201,6 +205,10 @@ int main()
                             s.move = true;
                             s.y = p1.y;
                             s.x = p1.x+1;
+                            break;
+                            
+                  case 'p': 
+                            gameOver = true;
                             break;
          }
           
@@ -234,12 +242,12 @@ int main()
         attroff(COLOR_PAIR(2));
         mvaddstr(c.y, c.x, c.body); // Centipede, red
         
-        mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | Score: %d", score);
+        mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
         
         for(int i = 0; i < 116; i++)
         {
-         mvprintw(38, i, "_"); // Barrier, red
-         mvprintw(i, 116, "|");
+            mvprintw(38, i, "_"); // Barrier, red
+            mvprintw(i, 116, "|");
         }
         
         
