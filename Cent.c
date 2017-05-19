@@ -29,6 +29,7 @@ typedef struct pede
    int d; // Direction of the centipede 
    char body[10];
    int end;
+   int endNum[9];
 } pede;
 
 typedef struct shot
@@ -70,9 +71,9 @@ int main()
                };
                
    pede c = {
-              1, 1, 1, "}@@@@@@@@@", 9 // Set centipede at top left 
+              1, 1, 1, "}@@@@@@@@@", 9, 1 // Set centipede at top left 
             };    
-            
+           
    shot s = {
               false
             }; 
@@ -81,6 +82,15 @@ int main()
                      10, 10, 1
                 };
    
+     /* Centipede end */
+     for( int i = 1; i < 9; i++)
+     {
+      c.endNum[i] = i;
+     }
+     
+   
+    /* Mushroom positioning */ 
+    
     for(int i = 0; i < 30; i++)
     {
       m[i].y = i+4; // Set mushrooms on each row
@@ -146,18 +156,20 @@ int main()
             c.end -= 1;
             score += 1000;
          }
-             
-               else if (c.x+1 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+2 == s.x && c.y == s.y || c.x+3 == s.x && c.y == s.y || c.x+4 == s.x && c.y == s.y || c.x+5 == s.x && c.y == s.y || c.x+6 == s.x && c.y == s.y || c.x+7 == s.x && c.y == s.y || c.x+8 == s.x && c.y == s.y || c.x+9 == s.x && c.y == s.y) 
+               for(int i = 0; i < 9; i++)
                {
-                   // Reset bullet upon hit
-                  s.move = false;
-                  s.x = p1.x;
-                  s.y = p1.y;
-            
+                   if (c.x+(c.end-i) == s.x && c.y == s.y) 
+                  {
+                      // Reset bullet upon hit
+                     s.move = false;
+                     s.x = p1.x;
+                     s.y = p1.y;
                
-                  c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
-                  c.end -= 1;
-                  score += 100;
+                  
+                     c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
+                     c.end -= 1;
+                     score += 100;
+                  }
                }
                
          /* Mushroom collision detection */
