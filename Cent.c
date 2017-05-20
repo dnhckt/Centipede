@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <string.h>
 
 /*
     Centipede
@@ -29,7 +30,6 @@ typedef struct pede
    int d; // Direction of the centipede 
    char body[10];
    int end;
-   int endNum[9];
 } pede;
 
 typedef struct shot
@@ -71,8 +71,12 @@ int main()
                };
                
    pede c = {
-              1, 1, 1, "}@@@@@@@@@", 9, 1 // Set centipede at top left 
+              1, 1, 1, "}@@@@@@@@@", strlen(c.body) // Set centipede at top left 
             };    
+           
+   pede cSub = {
+                  -1, -1, -c.d, "@@@@@@@@{", strlen(cSub.body)
+               };        
            
    shot s = {
               false
@@ -81,12 +85,6 @@ int main()
    mushroom m[30] = {
                      10, 10, 1
                 };
-   
-     /* Centipede end */
-     for( int i = 1; i < 9; i++)
-     {
-      c.endNum[i] = i;
-     }
      
    
     /* Mushroom positioning */ 
@@ -103,27 +101,32 @@ int main()
     }       
     
    bool gameOver = false; // Used to end the game 
+   bool split = false;
+   int splitPoint;
    
    wbkgd(stdscr, COLOR_PAIR(1)); // Background colour
      
    /* Main game loop */
    
-   for(nodelay(stdscr, 1); !gameOver; usleep(30000))
+   for(nodelay(stdscr, 1); !gameOver; usleep(10000))
    {      
-        //score++; // Rolling score over time
-        c.x += c.d; // Sets the centipede movement
-        erase(); // Deletes character trail of centipede
-              
-        /* Add mushrooms */
+         //score++; // Rolling score over time
+         c.x += c.d; // Sets the centipede movement
+         cSub.x += cSub.d;
         
-        attron(COLOR_PAIR(3));
-        for(int i = 0; i < 30; i++)
-        {
-            mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
-        }  
-        attroff(COLOR_PAIR(3));
+         erase(); // Deletes character trail of centipede
+         mvprintw(1, 1, "%d", c.end);      
+        
+          /* Add mushrooms */
+           
+          attron(COLOR_PAIR(3));
+          for(int i = 0; i < 30; i++)
+          {
+              mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
+          }  
+          attroff(COLOR_PAIR(3));
       
-         /* Centipede Direction controls */
+         /* Centipede direction controls */
          
          if(c.x == xMax-9) // Right edge of screen
          {
@@ -152,22 +155,25 @@ int main()
             s.x = p1.x;
             s.y = p1.y;
             
-            c.body[c.end] = 0; // Remove a body piece if the centipede's head is shot
             c.end -= 1;
             score += 1000;
          }
                for(int i = 0; i < 9; i++)
                {
-                   if (c.x+(c.end-i) == s.x && c.y == s.y) 
+                   if (c.x + (c.end-i) == s.x && c.y == s.y) 
                   {
-                      // Reset bullet upon hit
+                     // Reset bullet upon hit
                      s.move = false;
                      s.x = p1.x;
                      s.y = p1.y;
-               
-                  
-                     c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body 
-                     c.end -= 1;
+                     c.body[c.end-i] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
+                     
+                     split = true;
+                     splitPoint = c.end-i;
+                     cSub.x = c.x+(c.end-i);
+                     cSub.y = c.y;
+            
+                     c.end -= i;
                      score += 100;
                   }
                }
@@ -287,6 +293,27 @@ int main()
         mvprintw(p1.y, p1.x, "<o>"); // Player, green 
         attroff(COLOR_PAIR(2));
         mvaddstr(c.y, c.x, c.body); // Centipede, red
+        
+        if (split)
+        {
+                     for(int i = 0; i < splitPoint; i++)
+                     {
+                        mvaddstr(cSub.y, cSub.x + (c.end), cSub.body);
+                     }
+                 //    mvaddstr(cSub.y, cSub.x + (c.end), cSub.body);
+                     
+                      if(cSub.x == xMax-c.end) // Right edge of screen
+                     {
+                      cSub.d *= -1; // Change direction
+                      cSub.y += 1;  // Move down the screen
+                     }
+                     
+                      else if (cSub.x == 0) // Left edge of screen
+                     {
+                       cSub.d = 1;
+                       cSub.y += 1;
+                     }           
+        }       
         
         mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
         
