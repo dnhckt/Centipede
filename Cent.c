@@ -57,7 +57,7 @@ int main()
    init_pair(2, COLOR_GREEN, COLOR_BLACK);
    init_pair(3, COLOR_BLUE, COLOR_BLACK);  
    
-   int yMax = 44, xMax = 116;
+   int yMax = 44, xMax = 86;
    // getmaxyx(stdscr, yMax, xMax);
    int score = 0, endScore;
    srand(time(NULL));
@@ -71,7 +71,7 @@ int main()
                };
                
    pede c = {
-              1, 1, 1, "}@@@@@@@@@", strlen(c.body) // Set centipede at top left 
+              2, 2, 1, "}@@@@@@@@@", strlen(c.body) // Set centipede at top left 
             };    
            
    pede cSub = {
@@ -91,11 +91,11 @@ int main()
     
     for(int i = 0; i < 30; i++)
     {
-      m[i].y = i+4; // Set mushrooms on each row
-      m[i].x = rand() % 115; // Set x position as random
+      m[i].y = i+2; // Set mushrooms on each row
+      m[i].x = rand() % xMax; // Set x position as random
       if (m[i].x == m[i-1].x || m[i].x+1 == m[i-1].x || m[i].x-1 == m[i-1].x)
       {
-         m[i].x = rand() % 115; // Reroll the xpos of the mushroom if too close to the one before
+         m[i].x = rand() % xMax; // Reroll the xpos of the mushroom if too close to the one before 
       }
       m[i].health = 5;                    
     }       
@@ -108,14 +108,12 @@ int main()
      
    /* Main game loop */
    
-   for(nodelay(stdscr, 1); !gameOver; usleep(10000))
+   for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
          //score++; // Rolling score over time
          c.x += c.d; // Sets the centipede movement
          cSub.x += cSub.d;
-        
          erase(); // Deletes character trail of centipede
-         mvprintw(1, 1, "%d", c.end);      
         
           /* Add mushrooms */
            
@@ -128,12 +126,12 @@ int main()
       
          /* Centipede direction controls */
          
-         if(c.x == xMax-9) // Right edge of screen
+         if(c.x == xMax-c.end) // Right edge of screen
          {
           c.d *= -1; // Change direction
           c.y += 1;  // Move down the screen
          }
-            else if (c.x == 0) // Left edge of screen
+            else if (c.x == 2) // Left edge of screen
             {
               c.d = 1;
               c.y += 1;
@@ -158,25 +156,47 @@ int main()
             c.end -= 1;
             score += 1000;
          }
-               for(int i = 0; i < 9; i++)
-               {
-                   if (c.x + (c.end-i) == s.x && c.y == s.y) 
-                  {
-                     // Reset bullet upon hit
-                     s.move = false;
-                     s.x = p1.x;
-                     s.y = p1.y;
-                     c.body[c.end-i] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
-                     
-                     split = true;
-                     splitPoint = c.end-i;
-                     cSub.x = c.x+(c.end-i);
-                     cSub.y = c.y;
-            
-                     c.end -= i;
-                     score += 100;
-                  }
-               }
+             // Before centipede split
+             if(!split)
+             {
+             
+                     for(int i = 0; i < 9; i++)
+                     {
+                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
+                        {
+                           // Reset bullet upon hit
+                           s.move = false;
+                           s.x = p1.x;
+                           s.y = p1.y;
+                           c.body[c.end-i] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
+                           
+                           split = true;
+                           splitPoint = c.end-i;
+                           cSub.x = c.x+(c.end-i);
+                           cSub.y = c.y;
+                  
+                           c.end -= i;
+                           score += 100;
+                        }
+                      }
+            }
+            // If centipede has split
+            else 
+            {
+             
+                     for(int i = 0; i < 9; i++)
+                     {
+                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
+                        {
+                           // Reset bullet upon hit
+                           s.move = false;
+                           s.x = p1.x;
+                           s.y = p1.y;
+                           c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body
+                           c.end -= 0;
+                        }
+                     }
+            }
                
          /* Mushroom collision detection */
          
@@ -219,6 +239,25 @@ int main()
                   c.y += 1; // Move down the screen
                }
              }
+              // Second Centipede 
+              
+              if (cSub.d == 1)
+              {
+               if(cSub.x+cSub.end == m[i].x && cSub.y == m[i].y)
+               {
+                  cSub.d *= -1;
+                  cSub.y += 1;
+               }
+              }
+              else 
+              {
+               if (cSub.x == m[i].x && cSub.y == m[i].y)
+               {
+                  cSub.d *= -1; 
+                  c.y += 1;
+               
+               }
+              }
           
          }
          
@@ -271,7 +310,7 @@ int main()
            case 39: 
                    p1.y++; // Upper
                    break; 
-           case 45: 
+           case 43: 
                    p1.y--; // Lower
                    break; 
          } 
@@ -282,7 +321,7 @@ int main()
             case 1: 
                    p1.x++; // Left
                    break;
-            case 116:
+            case 60:
                    p1.x--; // Right
                    break;
          }
@@ -300,7 +339,6 @@ int main()
                      {
                         mvaddstr(cSub.y, cSub.x + (c.end), cSub.body);
                      }
-                 //    mvaddstr(cSub.y, cSub.x + (c.end), cSub.body);
                      
                       if(cSub.x == xMax-c.end) // Right edge of screen
                      {
@@ -308,19 +346,20 @@ int main()
                       cSub.y += 1;  // Move down the screen
                      }
                      
-                      else if (cSub.x == 0) // Left edge of screen
+                      else if (cSub.x == 2) // Left edge of screen
                      {
                        cSub.d = 1;
                        cSub.y += 1;
                      }           
         }       
         
-        mvprintw(0, 0, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
+        mvprintw(0, 2, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
         
-        for(int i = 0; i < 116; i++)
+        for(int i = 0; i < xMax; i++)
         {
             mvprintw(38, i, "_"); // Barrier, red
-            mvprintw(i, 116, "|");
+            mvprintw(i, xMax, "|");
+            mvprintw(i, 1, "|");
         }
         
         
