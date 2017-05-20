@@ -30,6 +30,7 @@ typedef struct pede
    int d; // Direction of the centipede 
    char body[10];
    int end;
+   bool reachedEnd;
 } pede;
 
 typedef struct shot
@@ -71,11 +72,11 @@ int main()
                };
                
    pede c = {
-              2, 2, 1, "}@@@@@@@@@", strlen(c.body) // Set centipede at top left 
+              2, 2, 1, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
             };    
            
    pede cSub = {
-                  -1, -1, -c.d, "@@@@@@@@{", strlen(cSub.body)
+                  -1, -1, -c.d, "@@@@@@@@{", strlen(cSub.body), false
                };        
            
    shot s = {
@@ -97,6 +98,11 @@ int main()
       {
          m[i].x = rand() % xMax; // Reroll the xpos of the mushroom if too close to the one before 
       }
+      if(m[i].x < 2)
+      {
+        m[i].x = rand() % xMax;
+      }
+    
       m[i].health = 5;                    
     }       
     
@@ -108,7 +114,7 @@ int main()
      
    /* Main game loop */
    
-   for(nodelay(stdscr, 1); !gameOver; usleep(30000))
+   for(nodelay(stdscr, 1); !gameOver; usleep(10000))
    {      
          //score++; // Rolling score over time
          c.x += c.d; // Sets the centipede movement
@@ -126,20 +132,47 @@ int main()
       
          /* Centipede direction controls */
          
-         if(c.x == xMax-c.end) // Right edge of screen
+         if (!c.reachedEnd)
          {
-          c.d *= -1; // Change direction
-          c.y += 1;  // Move down the screen
-         }
-            else if (c.x == 2) // Left edge of screen
+            if (c.x == xMax-c.end) // Right edge of screen
             {
-              c.d = 1;
-              c.y += 1;
+               c.d *= -1; // Change direction
+               c.y += 1;  // Move down the screen
             }
-      
+               else if (c.x == 2) // Left edge of screen
+               {
+                   c.d = 1;
+                   c.y += 1;
+               }
+               
+           if (c.y == 42)
+           { 
+               c.reachedEnd = true;
+               c.y -= 1;
+           }
+         }
+         
+         else
+            {
+               if (c.x == xMax-c.end)
+               {
+                  c.d *= -1;
+                  c.y -= 1;
+               }
+               else if (c.x == 2)
+               {
+                 c.d = 1;
+                 c.y -= 1;
+               }
+               if (c.y == 39)
+               {
+                 c.reachedEnd = false;
+               }
+            
+           }
           
          /* Centipede collision detection */
-          
+                  
          if(c.x == p1.x && c.y == p1.y || c.end == -1)
          {
             gameOver = true; // End game if the centipede reaches the player or is shot to death
@@ -168,9 +201,9 @@ int main()
                            s.move = false;
                            s.x = p1.x;
                            s.y = p1.y;
-                           c.body[c.end-i] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
+                           c.body[c.end] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
                            
-                           split = true;
+                      //     split = true;
                            splitPoint = c.end-i;
                            cSub.x = c.x+(c.end-i);
                            cSub.y = c.y;
@@ -321,7 +354,7 @@ int main()
             case 1: 
                    p1.x++; // Left
                    break;
-            case 60:
+            case 83:
                    p1.x--; // Right
                    break;
          }
@@ -354,12 +387,14 @@ int main()
         }       
         
         mvprintw(0, 2, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
+        mvprintw(1, 1, " ------------------------------------------------------------------------------------");
         
-        for(int i = 0; i < xMax; i++)
+        for(int i = 2; i < xMax; i++)
         {
             mvprintw(38, i, "_"); // Barrier, red
             mvprintw(i, xMax, "|");
             mvprintw(i, 1, "|");
+            mvprintw(43, i, "_");
         }
         
         
