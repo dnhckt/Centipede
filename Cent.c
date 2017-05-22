@@ -68,6 +68,33 @@ int main()
    
    /* Game defaults end */
    
+   /* intro screen */
+   mvprintw(10, xMax/3-2, "@@@ @@@ @@@ @@@  @  @@@ @@@ @@@ @@@");
+   mvprintw(11, xMax/3-2, "@   @   @ @  @   @  @ @ @   @ @ @  ");
+   mvprintw(12, xMax/3-2, "@   @@@ @ @  @   @  @@@ @@@ @ @ @@@");
+   mvprintw(13, xMax/3-2, "@   @   @ @  @   @  @   @   @ @ @  ");
+   mvprintw(14, xMax/3-2, "@@@ @@@ @ @  @   @  @   @@@ @@@ @@@");
+   mvprintw(15, xMax/3-2, "===================================");
+   mvprintw(16, xMax/3-2, "              CONTROLS             ");
+   mvprintw(17, xMax/3-2, "===================================");
+   mvprintw(18, xMax/3-2, " | w | s  | a  |  d  |space|  p  | ");
+   mvprintw(19, xMax/3-2, " *===============================* ");
+   mvprintw(20, xMax/3-2, " | up|down|left|right|shoot|quit | ");
+   mvprintw(21, xMax/3-2, "===================================");
+   mvprintw(22, xMax/3-2, "                                   ");
+   mvprintw(23, xMax/3-2, "       Press any key to begin      ");
+   mvprintw(24, xMax/3-2, "___________________________________");
+   
+   for (int i = 15; i < 25; i++)
+   {
+      mvprintw(i, xMax/3-3, "|");
+      mvprintw(i, xMax/3+33, "|");
+   }
+   
+   
+   getch();
+   /*intro screen end*/
+   
    /* Initialise player, centipede, mushrooms and bullets */ 
    
    player p1 = {
@@ -75,7 +102,7 @@ int main()
                };
                
    pede c = {
-              10, 10, 0, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
+              2, 2, 1, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
             };    
            
    pede cSub = {
@@ -133,15 +160,60 @@ int main()
           }  
           attroff(COLOR_PAIR(3));
       
- 
+          /* Centipede direction controls */
+         
+            if (!c.reachedEnd)
+            {
+                  if (c.x == xMax-c.end && c.d == 1) // Right edge of screen
+                  {
+                     c.d *= -1; // Change direction
+                     c.y += 1;  // Move down the screen
+                  }
+                     else if (c.x == 2) // Left edge of screen
+                     {
+                         c.d = 1;
+                         c.y += 1;
+                     }
+                     
+                 if (c.y == 42)
+                 { 
+                     c.reachedEnd = true; // If end of screen reached, reverse
+                     c.y -= 1;
+                 }
+            }
+         
+         else
+            {
+               if (c.x == 83-c.end)
+               {
+                  c.d *= -1;
+                  c.y -= 1;
+               }
+               else if (c.x == 2)
+               {
+                 c.d = 1;
+                 c.y -= 1;
+               }
+               if (c.y == 39)
+               {
+                 c.reachedEnd = false;
+               }
+            
+           }
           
          /* Centipede collision detection */
                   
-         if(c.x-c.end == p1.x && c.y == p1.y || c.end == -1)
+         if(c.x-c.end == p1.x && c.y == p1.y || cSub.x == p1.x && cSub.y == p1.y)
          {
-            gameOver = true; // End game if the centipede reaches the player or is shot to death
+            gameOver = true; // End game if the centipede reaches the player
             endScore = score; // Save the score 
          } 
+         
+         if(c.end == -1 && cSub.end == -1)
+         {
+           gameOver = true; // End the game if the centipedes are shot to death
+           endScore = score;
+         }
          
          if (c.x == s.x && c.y == s.y) // Headshot
          {
@@ -203,52 +275,11 @@ int main()
                            s.x = p1.x;
                            s.y = p1.y;
                            score += 500;
-                           cSub.body[0] = 0;
+                           cSub.body[cSub.end] = -1;
+                           cSub.body[cSub.end-1] = -1;
                         }
                      }
             }
-            
-             /* Centipede direction controls */
-         
-            if (!c.reachedEnd)
-            {
-                  if (c.x == xMax-c.end && c.d == 1) // Right edge of screen
-                  {
-                     c.d *= -1; // Change direction
-                     c.y += 1;  // Move down the screen
-                  }
-                     else if (c.x == 2) // Left edge of screen
-                     {
-                         c.d = 1;
-                         c.y += 1;
-                     }
-                     
-                 if (c.y == 42)
-                 { 
-                     c.reachedEnd = true; // If end of screen reached, reverse
-                     c.y -= 1;
-                 }
-            }
-         
-         else
-            {
-               if (c.x == 83-c.end)
-               {
-                  c.d *= -1;
-                  c.y -= 1;
-               }
-               else if (c.x == 2)
-               {
-                 c.d = 1;
-                 c.y -= 1;
-               }
-               if (c.y == 39)
-               {
-                 c.reachedEnd = false;
-               }
-            
-           }
-
             
             /* Centipede to centipede collision
           if (c.x == cSub.x-cSub.end && c.y == cSub.y)
@@ -298,7 +329,7 @@ int main()
              
              if (c.d == 1)
              { 
-                if(c.x+c.end == m[i].x && c.y == m[i].y)
+                if(c.x+c.end-1 == m[i].x && c.y == m[i].y)
                 { 
                   c.d *= -1; // Change centipede direction
                   c.y += 1;  // Move down the screen
@@ -413,18 +444,51 @@ int main()
                      mvaddstr(cSub.y, cSub.x , cSub.body); // Magenta
                      attroff(COLOR_PAIR(4));
                      
-                      if(cSub.x == xMax) // Right edge of screen
-                     {
-                      cSub.d *= -1; // Change direction
-                      cSub.y += 1;  // Move down the screen
-                     }
+      
+                            
+                            
+                       if (!cSub.reachedEnd)
+                        {
+                        
+                        
+                               if(cSub.x == xMax && cSub.d == 1) // Right edge of screen
+                                 {
+                                  cSub.d *= -1; // Change direction
+                                  cSub.y += 1;  // Move down the screen
+                                 }
+                           
+                               else if (cSub.x == 2+c.end) // Left edge of screen
+                              {
+                                cSub.d = 1;
+                                cSub.y += 1;
+                              } 
                      
-                      else if (cSub.x == 2+c.end) // Left edge of screen
-                     {
-                       cSub.d = 1;
-                       cSub.y += 1;
-                     } 
-                              
+                                 
+                             if (cSub.y == 42)
+                             { 
+                                 cSub.reachedEnd = true; // If end of screen reached, reverse
+                                 cSub.y -= 1;
+                             }
+                        }
+                     
+                     else
+                        {
+                           if (cSub.x == 83)
+                           {
+                              c.d *= -1;
+                              c.y -= 1;
+                           }
+                           else if (cSub.x == 2+c.end)
+                           {
+                             cSub.d = 1;
+                             c.y -= 1;
+                           }
+                           if (cSub.y == 39)
+                           {
+                             cSub.reachedEnd = false;
+                           }
+                        
+                       }  
         }      
         
         mvprintw(0, 2, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
