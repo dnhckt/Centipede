@@ -45,7 +45,12 @@ typedef struct mushroom
   int health;
 } mushroom;
 
-void Bounce (pede c);
+typedef struct spider
+{
+  int y, x;
+  int health;
+} spider;
+
 
 int main()
 {
@@ -69,6 +74,7 @@ int main()
    /* Game defaults end */
    
    /* intro screen */
+   attron(COLOR_PAIR(1));
    mvprintw(10, xMax/3-2, "@@@ @@@ @@@ @@@  @  @@@ @@@ @@@ @@@");
    mvprintw(11, xMax/3-2, "@   @   @ @  @   @  @ @ @   @ @ @  ");
    mvprintw(12, xMax/3-2, "@   @@@ @ @  @   @  @@@ @@@ @ @ @@@");
@@ -84,13 +90,12 @@ int main()
    mvprintw(22, xMax/3-2, "                                   ");
    mvprintw(23, xMax/3-2, "       Press any key to begin      ");
    mvprintw(24, xMax/3-2, "___________________________________");
-   
    for (int i = 15; i < 25; i++)
    {
       mvprintw(i, xMax/3-3, "|");
       mvprintw(i, xMax/3+33, "|");
    }
-   
+   attroff(COLOR_PAIR(1));   
    
    getch();
    /*intro screen end*/
@@ -102,7 +107,7 @@ int main()
                };
                
    pede c = {
-              2, 2, 1, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
+              2, 2, 1, "@@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
             };    
            
    pede cSub = {
@@ -115,11 +120,8 @@ int main()
              
    mushroom m[30] = {
                      10, 10, 1
-                };
-     
-  
-
-    
+                };/*
+       
     for(int i = 0; i < 30; i++)
     {
       m[i].y = i+2; // Set mushrooms on each row
@@ -133,8 +135,8 @@ int main()
         m[i].x = rand() % 60+10;
       }
     
-      m[i].health = 5;                    
-    }       
+      m[i].health = 5;                   
+    }    */   
     
    bool gameOver = false; // Used to end the game 
    bool split = false;
@@ -156,7 +158,7 @@ int main()
           attron(COLOR_PAIR(3));
           for(int i = 0; i < 30; i++)
           {
-              mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
+           //   mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
           }  
           attroff(COLOR_PAIR(3));
       
@@ -243,8 +245,12 @@ int main()
                            c.body[c.end] = 0;
                            
                            split = true;
-                           c.end = strlen(c.body);
-                           
+                           for(int j = 0; j < i; j++)
+                           {
+                              c.end -= 1;
+                              c.body[c.end] = 0;
+                              cSub.body[j] = 64;
+                           }
                            cSub.x = c.x+c.end;
                            cSub.y = c.y;
                            score += 100;
@@ -254,7 +260,7 @@ int main()
             // If centipede has split
             else 
             {
-                     for(int i = 0; i < 9; i++)
+                     for(int i = 0; i < c.end; i++)
                      {
                          if (c.x + (c.end-i) == s.x && c.y == s.y) 
                         {
@@ -267,40 +273,23 @@ int main()
                            c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body
                            c.end -= 1;
                         }
-                        
-                        if (cSub.x == s.x && cSub.y == s.y) 
+                     }
+                     for(int i = 0; i < cSub.end; i++)
+                     {
+                        if (cSub.x + (cSub.end-i) == s.x && cSub.y == s.y) 
                         {
                            // Reset bullet upon hit
                            s.move = false;
                            s.x = p1.x;
                            s.y = p1.y;
-                           score += 500;
-                           cSub.body[cSub.end] = -1;
-                           cSub.body[cSub.end-1] = -1;
+                           score += 50;
+                           
+                           cSub.body[cSub.end] = 0;
+                           cSub.end -= 1;
+                           
                         }
                      }
             }
-            
-            /* Centipede to centipede collision
-          if (c.x == cSub.x-cSub.end && c.y == cSub.y)
-          {
-            if (c.d == 1)
-            {
-               c.d *= -1;
-            }
-            else
-            {
-               c.d = 1;
-            }
-            if (cSub.d == 1)
-            {
-               cSub.d *= -1;
-            }
-            else
-            {
-               cSub.d = 1;
-            }
-          }*/
                
          /* Mushroom collision detection */
          
@@ -451,13 +440,13 @@ int main()
                         {
                         
                         
-                               if(cSub.x == xMax && cSub.d == 1) // Right edge of screen
+                               if(cSub.x == xMax-cSub.end && cSub.d == 1) // Right edge of screen
                                  {
                                   cSub.d *= -1; // Change direction
                                   cSub.y += 1;  // Move down the screen
                                  }
                            
-                               else if (cSub.x == 2+c.end) // Left edge of screen
+                               else if (cSub.x == 2) // Left edge of screen
                               {
                                 cSub.d = 1;
                                 cSub.y += 1;
@@ -496,10 +485,10 @@ int main()
         
         for(int i = 2; i < xMax; i++)
         {
-            mvprintw(38, i, "_"); // Barrier, red
+            mvprintw(39, i, "_"); // Barrier, red
             mvprintw(i, xMax, "|");
             mvprintw(i, 1, "|");
-            mvprintw(43, i, "_");
+            mvprintw(43, i, "-");
         }
         
         
