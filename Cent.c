@@ -45,6 +45,8 @@ typedef struct mushroom
   int health;
 } mushroom;
 
+void Bounce (pede c);
+
 int main()
 {
    /* Game defaults */
@@ -57,6 +59,7 @@ int main()
    init_pair(1, COLOR_RED, COLOR_BLACK);
    init_pair(2, COLOR_GREEN, COLOR_BLACK);
    init_pair(3, COLOR_BLUE, COLOR_BLACK);  
+   init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
    
    int yMax = 44, xMax = 86;
    // getmaxyx(stdscr, yMax, xMax);
@@ -72,11 +75,11 @@ int main()
                };
                
    pede c = {
-              2, 2, 1, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
+              10, 10, 0, "}@@@@@@@@@", strlen(c.body), false // Set centipede at top left 
             };    
            
    pede cSub = {
-                  -1, -1, -c.d, "@@@@@@@@{", strlen(cSub.body), false
+                  -1, -1, -c.d, "@", strlen(cSub.body), false
                };        
            
    shot s = {
@@ -87,20 +90,20 @@ int main()
                      10, 10, 1
                 };
      
-   
-    /* Mushroom positioning */ 
+  
+
     
     for(int i = 0; i < 30; i++)
     {
       m[i].y = i+2; // Set mushrooms on each row
-      m[i].x = rand() % xMax; // Set x position as random
+      m[i].x = rand() % 60+10; // Set x position as random
       if (m[i].x == m[i-1].x || m[i].x+1 == m[i-1].x || m[i].x-1 == m[i-1].x)
       {
-         m[i].x = rand() % xMax; // Reroll the xpos of the mushroom if too close to the one before 
+         m[i].x = rand() % 60+10; // Reroll the xpos of the mushroom if too close to the one before 
       }
       if(m[i].x < 2)
       {
-        m[i].x = rand() % xMax;
+        m[i].x = rand() % 60+10;
       }
     
       m[i].health = 5;                    
@@ -114,7 +117,7 @@ int main()
      
    /* Main game loop */
    
-   for(nodelay(stdscr, 1); !gameOver; usleep(10000))
+   for(nodelay(stdscr, 1); !gameOver; usleep(30000))
    {      
          //score++; // Rolling score over time
          c.x += c.d; // Sets the centipede movement
@@ -130,31 +133,106 @@ int main()
           }  
           attroff(COLOR_PAIR(3));
       
-         /* Centipede direction controls */
-         
-         if (!c.reachedEnd)
+ 
+          
+         /* Centipede collision detection */
+                  
+         if(c.x-c.end == p1.x && c.y == p1.y || c.end == -1)
          {
-            if (c.x == xMax-c.end) // Right edge of screen
-            {
-               c.d *= -1; // Change direction
-               c.y += 1;  // Move down the screen
+            gameOver = true; // End game if the centipede reaches the player or is shot to death
+            endScore = score; // Save the score 
+         } 
+         
+         if (c.x == s.x && c.y == s.y) // Headshot
+         {
+            // Reset bullet upon hit
+            s.move = false;
+            s.x = p1.x;
+            s.y = p1.y;
+            
+            c.end -= 1;
+            c.body[c.end] = 0;
+            score += 1000;
+         }         
+         
+             // Before centipede split
+             if(!split)
+             {
+             
+                     for(int i = 0; i < 9; i++)
+                     {
+                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
+                        {
+                           // Reset bullet upon hit
+                           s.move = false;
+                           s.x = p1.x;
+                           s.y = p1.y;
+                           c.end -= 1; // Remove the body piece if the bullet reaches the centipede's body
+                           c.body[c.end] = 0;
+                           
+                           split = true;
+                           c.end = strlen(c.body);
+                           
+                           cSub.x = c.x+c.end;
+                           cSub.y = c.y;
+                           score += 100;
+                        }
+                      }
             }
-               else if (c.x == 2) // Left edge of screen
-               {
-                   c.d = 1;
-                   c.y += 1;
-               }
-               
-           if (c.y == 42)
-           { 
-               c.reachedEnd = true;
-               c.y -= 1;
-           }
-         }
+            // If centipede has split
+            else 
+            {
+                     for(int i = 0; i < 9; i++)
+                     {
+                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
+                        {
+                           // Reset bullet upon hit
+                           s.move = false;
+                           s.x = p1.x;
+                           s.y = p1.y;
+                           
+                           score += 100;
+                           c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body
+                           c.end -= 1;
+                        }
+                        
+                        if (cSub.x == s.x && cSub.y == s.y) 
+                        {
+                           // Reset bullet upon hit
+                           s.move = false;
+                           s.x = p1.x;
+                           s.y = p1.y;
+                           score += 500;
+                           cSub.body[0] = 0;
+                        }
+                     }
+            }
+            
+             /* Centipede direction controls */
+         
+            if (!c.reachedEnd)
+            {
+                  if (c.x == xMax-c.end && c.d == 1) // Right edge of screen
+                  {
+                     c.d *= -1; // Change direction
+                     c.y += 1;  // Move down the screen
+                  }
+                     else if (c.x == 2) // Left edge of screen
+                     {
+                         c.d = 1;
+                         c.y += 1;
+                     }
+                     
+                 if (c.y == 42)
+                 { 
+                     c.reachedEnd = true; // If end of screen reached, reverse
+                     c.y -= 1;
+                 }
+            }
          
          else
             {
-               if (c.x == xMax-c.end)
+               if (c.x == 83-c.end)
                {
                   c.d *= -1;
                   c.y -= 1;
@@ -170,66 +248,28 @@ int main()
                }
             
            }
-          
-         /* Centipede collision detection */
-                  
-         if(c.x == p1.x && c.y == p1.y || c.end == -1)
-         {
-            gameOver = true; // End game if the centipede reaches the player or is shot to death
-            endScore = score; // Save the score 
-         } 
-         
-         if (c.x == s.x && c.y == s.y)
-         {
-            // Reset bullet upon hit
-            s.move = false;
-            s.x = p1.x;
-            s.y = p1.y;
+
             
-            c.end -= 1;
-            score += 1000;
-         }
-             // Before centipede split
-             if(!split)
-             {
-             
-                     for(int i = 0; i < 9; i++)
-                     {
-                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
-                        {
-                           // Reset bullet upon hit
-                           s.move = false;
-                           s.x = p1.x;
-                           s.y = p1.y;
-                           c.body[c.end] = 0 ; // Remove the body piece if the bullet reaches the centipede's body
-                           
-                      //     split = true;
-                           splitPoint = c.end-i;
-                           cSub.x = c.x+(c.end-i);
-                           cSub.y = c.y;
-                  
-                           c.end -= i;
-                           score += 100;
-                        }
-                      }
-            }
-            // If centipede has split
-            else 
+            /* Centipede to centipede collision
+          if (c.x == cSub.x-cSub.end && c.y == cSub.y)
+          {
+            if (c.d == 1)
             {
-             
-                     for(int i = 0; i < 9; i++)
-                     {
-                         if (c.x + (c.end-i) == s.x && c.y == s.y) 
-                        {
-                           // Reset bullet upon hit
-                           s.move = false;
-                           s.x = p1.x;
-                           s.y = p1.y;
-                           c.body[c.end] = 0; // Remove a body piece if the bullet reaches the centipede's body
-                           c.end -= 0;
-                        }
-                     }
+               c.d *= -1;
             }
+            else
+            {
+               c.d = 1;
+            }
+            if (cSub.d == 1)
+            {
+               cSub.d *= -1;
+            }
+            else
+            {
+               cSub.d = 1;
+            }
+          }*/
                
          /* Mushroom collision detection */
          
@@ -276,7 +316,7 @@ int main()
               
               if (cSub.d == 1)
               {
-               if(cSub.x+cSub.end == m[i].x && cSub.y == m[i].y)
+               if(cSub.x == m[i].x && cSub.y == m[i].y)
                {
                   cSub.d *= -1;
                   cSub.y += 1;
@@ -366,25 +406,26 @@ int main()
         attroff(COLOR_PAIR(2));
         mvaddstr(c.y, c.x, c.body); // Centipede, red
         
+        /* Print second centipede */
         if (split)
-        {
-                     for(int i = 0; i < splitPoint; i++)
-                     {
-                        mvaddstr(cSub.y, cSub.x + (c.end), cSub.body);
-                     }
+        {            
+                     attron(COLOR_PAIR(4));
+                     mvaddstr(cSub.y, cSub.x , cSub.body); // Magenta
+                     attroff(COLOR_PAIR(4));
                      
-                      if(cSub.x == xMax-c.end) // Right edge of screen
+                      if(cSub.x == xMax) // Right edge of screen
                      {
                       cSub.d *= -1; // Change direction
                       cSub.y += 1;  // Move down the screen
                      }
                      
-                      else if (cSub.x == 2) // Left edge of screen
+                      else if (cSub.x == 2+c.end) // Left edge of screen
                      {
                        cSub.d = 1;
                        cSub.y += 1;
-                     }           
-        }       
+                     } 
+                              
+        }      
         
         mvprintw(0, 2, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
         mvprintw(1, 1, " ------------------------------------------------------------------------------------");
@@ -403,6 +444,4 @@ int main()
    
    endwin(); // End ncurses
    printf("Game over! Your score was %d \n", endScore);
-   
-   
 }
