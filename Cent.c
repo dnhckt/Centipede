@@ -12,9 +12,31 @@
     About: Centipede is a fixed shooter arcade game produced by Atari in 1980.
            This is a recreation of the game in C using the ncurses library.
            
-           To play, compile and run this file.
-               
-              
+           To play, compile and run this file.              
+           
+           Features:
+                     User      - Can move up and down and side to side, but only in a small box on the screen. 
+                                 Can fire a bullet to attack enemy characters and score points. 
+                                 Dies if hit by the centipede or hit repeatedly by the spider.
+                                   
+                     Centipede - The centipede crawls down the screen. Once it reaches the user, it ends the game. 
+                                 If the user dodges the Centipede, it will turn around and cycle the user's area.
+                                 Head shots (1000 points) always remove a body piece.
+                                 Splits into two when shot in the body (100 points). Then, the centipedes lose a body part whenever shot.
+                                 If the centipedes are shot to death, it ends the game.
+                                 
+                     Mushrooms - Randomly spawned and block the centipede so it reaches the bottom more quickly.
+                                 Can be shot (10 points). To destroy, it takes five shots.
+                                 (Health is indicated by the number displayed and counts down from 5 to 0.)
+                                 
+                     Spider    - Bounces around the user arena and steals points when hitting the user. 
+                                 If it repeatedly hits the user they will die.  
+                                 
+             Known bugs: 
+                         > Centipede can skip over some mushrooms if they are too close together
+                         > Centipede sometimes can slip through the edge of the game window.                                                                 
+                         > Bullet resets if user presses space before it makes impact.   
+                         > First body shot to centipede after split will not remove a body piece.        
 */
 
 // Struct for the player character
@@ -33,18 +55,21 @@ typedef struct pede
    bool reachedEnd;
 } pede;
 
+// Struct for the bullet
 typedef struct shot
 {
   int y, x;
   bool move;
 } shot;
 
+// Struct for the mushrooms 
 typedef struct mushroom
 {
   int y, x;
   int health;
 } mushroom;
 
+// Struct for the spider
 typedef struct spider
 {
   int y, x;
@@ -76,6 +101,7 @@ int main()
    /* Game defaults end */
    
    /* intro screen */
+   
    wbkgd(stdscr, COLOR_PAIR(6));
    attron(COLOR_PAIR(6));
    mvprintw(10, xMax/3-2, "@@@ @@@ @@@ @@@  @  @@@ @@@ @@@ @@@");
@@ -100,10 +126,11 @@ int main()
    }
    attroff(COLOR_PAIR(6));   
    
-   getch();
+   getch(); // Activates the game
+   
    /*intro screen end*/
    
-   /* Initialise player, centipede, mushrooms and bullets */ 
+   /* Initialise player, centipede, mushrooms, spider and bullets */ 
    
    player p1 = {
                  yMax - 3, xMax/2 // Set player at middle-bottom of screen
@@ -114,7 +141,7 @@ int main()
             };    
            
    pede cSub = {
-                  -1, -1, -c.d, "@", strlen(cSub.body), false
+                  -1, -1, -c.d, "", strlen(cSub.body), false
                };        
            
    shot s = {
@@ -168,6 +195,7 @@ int main()
               mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
           }  
           attroff(COLOR_PAIR(3));
+          
       
           /* Centipede direction controls */
          
@@ -190,25 +218,25 @@ int main()
                      c.y -= 1;
                  }
             }
-         
-         else
-            {
-               if (c.x == 83-c.end)
-               {
-                  c.d *= -1;
-                  c.y -= 1;
-               }
-               else if (c.x == 2)
-               {
-                 c.d = 1;
-                 c.y -= 1;
-               }
-               if (c.y == 39)
-               {
-                 c.reachedEnd = false;
-               }
-            
-           }
+                  
+                  else // While in user area, loop
+                     {
+                        if (c.x == xMax-c.end)
+                        {
+                           c.d *= -1;
+                           c.y -= 1;
+                        }
+                        else if (c.x == 2)
+                        {
+                          c.d = 1;
+                          c.y -= 1;
+                        }
+                        if (c.y == 39)
+                        {
+                          c.reachedEnd = false;
+                        }
+                     
+                    }
           
          /* Centipede collision detection */
                   
@@ -260,13 +288,16 @@ int main()
                            }
                            cSub.x = c.x+c.end;
                            cSub.y = c.y;
+                           cSub.end = i;
                            score += 100;
                         }
                       }
             }
             // If centipede has split
             else 
-            {
+            {   
+                     // Centipede 1 body shots 
+                     
                      for(int i = 0; i < c.end; i++)
                      {
                          if (c.x + (c.end-i) == s.x && c.y == s.y) 
@@ -281,6 +312,9 @@ int main()
                            c.end -= 1;
                         }
                      }
+                     
+                     // Centipede 2 body shots 
+                     
                      for(int i = 0; i < cSub.end; i++)
                      {
                         if (cSub.x + (cSub.end-i) == s.x && cSub.y == s.y) 
@@ -296,53 +330,67 @@ int main()
                            
                         }
                      }
+                     
+                     // Centipede 2 head shots
+                     
+                     if(cSub.x == s.x && cSub.y == s.y)
+                     {
+                        s.move = false;
+                        s.x = p1.x;
+                        s.y = p1.y;
+                        score += 50;
+                        
+                        cSub.body[cSub.end] = 0;
+                        cSub.end -= 1;
+                     } 
+                    
             }
           
           /* Spider movement */  
           
-          // Move across 
-        
-        if(!a.dead)
-        {  
-          if (!a.bounceH)
-          {
-           a.x++;
-          }
-                else 
-                {
-                 a.x--;
-                }
-         
-                if (a.x == xMax)
-                {
-                  a.bounceH = true; 
-                }
-                
-                      else if (a.x == 2)
-                      {
-                        a.bounceH = false;
-                      }
-               
-           // Move up and down
+           // Move across 
+           
+           if(!a.dead)
+           {  
+             if (!a.bounceH)
+             {
+              a.x++;
+             }
+                   else 
+                   {
+                    a.x--;
+                   }
             
-            if(!a.bounceV)
-            {
-              a.y--;
-            }
-               else
-               {
-                a.y++;
-               }
+                   if (a.x == xMax)
+                   {
+                     a.bounceH = true; 
+                   }
                    
-            if (a.y == 33)
-            {
-              a.bounceV = true;
-            }
-               else if (a.y == 42)
+                         else if (a.x == 2)
+                         {
+                           a.bounceH = false;
+                         }
+                  
+            // Move up and down
+            
+               if(!a.bounceV)
                {
-                a.bounceV = false;
+                 a.y--;
                }
-        }
+                  else
+                  {
+                   a.y++;
+                  }
+                      
+               if (a.y == 33)
+               {
+                 a.bounceV = true;
+               }
+                  else if (a.y == 42)
+                  {
+                   a.bounceV = false;
+                  }
+          }
           
           /* Spider collision detection */
           
@@ -358,6 +406,7 @@ int main()
           
          if (a.y == s.y && a.x == s.x)
          {
+              score += 500;
               mvprintw(a.y, a.x, "~");
               a.dead = true;
               a.y = -10;
@@ -369,7 +418,7 @@ int main()
          
          for(int i = 0; i < 30; i++)
          {
-             // Bullet detection
+             // Bullets
              
              if (s.x == m[i].x && s.y == m[i].y)
              {
@@ -388,7 +437,7 @@ int main()
                 }
              }
              
-             // Centipede detection
+             // Centipede
              
              if (c.d == 1)
              { 
@@ -508,11 +557,10 @@ int main()
         {            
                      attron(COLOR_PAIR(4));
                      mvaddstr(cSub.y, cSub.x , cSub.body); // Magenta
-                     attroff(COLOR_PAIR(4));
-                     
-      
+                     attroff(COLOR_PAIR(4);
                             
-                            
+                       /* Direction Controls */
+                                                    
                        if (!cSub.reachedEnd)
                         {
                         
@@ -537,9 +585,9 @@ int main()
                              }
                         }
                      
-                     else
+                     else // While in user area, loop
                         {
-                           if (cSub.x == 83)
+                           if (cSub.x == xMax-cSub.end)
                            {
                               c.d *= -1;
                               c.y -= 1;
