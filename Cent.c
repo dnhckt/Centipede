@@ -49,6 +49,7 @@ typedef struct spider
 {
   int y, x;
   int health;
+  bool bounceV, bounceH, dead;
 } spider;
 
 
@@ -65,16 +66,18 @@ int main()
    init_pair(2, COLOR_GREEN, COLOR_BLACK);
    init_pair(3, COLOR_BLUE, COLOR_BLACK);  
    init_pair(4, COLOR_MAGENTA, COLOR_BLACK);
+   init_pair(5, COLOR_YELLOW, COLOR_BLACK);
+   init_pair(6, COLOR_BLACK, COLOR_RED);
    
    int yMax = 44, xMax = 86;
-   // getmaxyx(stdscr, yMax, xMax);
    int score = 0, endScore;
    srand(time(NULL));
    
    /* Game defaults end */
    
    /* intro screen */
-   attron(COLOR_PAIR(1));
+   wbkgd(stdscr, COLOR_PAIR(6));
+   attron(COLOR_PAIR(6));
    mvprintw(10, xMax/3-2, "@@@ @@@ @@@ @@@  @  @@@ @@@ @@@ @@@");
    mvprintw(11, xMax/3-2, "@   @   @ @  @   @  @ @ @   @ @ @  ");
    mvprintw(12, xMax/3-2, "@   @@@ @ @  @   @  @@@ @@@ @ @ @@@");
@@ -95,7 +98,7 @@ int main()
       mvprintw(i, xMax/3-3, "|");
       mvprintw(i, xMax/3+33, "|");
    }
-   attroff(COLOR_PAIR(1));   
+   attroff(COLOR_PAIR(6));   
    
    getch();
    /*intro screen end*/
@@ -120,7 +123,11 @@ int main()
              
    mushroom m[30] = {
                      10, 10, 1
-                };/*
+                };
+   spider a = {
+                 42, 5, 5, false
+              };
+                
        
     for(int i = 0; i < 30; i++)
     {
@@ -136,7 +143,7 @@ int main()
       }
     
       m[i].health = 5;                   
-    }    */   
+    }       
     
    bool gameOver = false; // Used to end the game 
    bool split = false;
@@ -158,7 +165,7 @@ int main()
           attron(COLOR_PAIR(3));
           for(int i = 0; i < 30; i++)
           {
-           //   mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
+              mvprintw(m[i].y, m[i].x, "%d", m[i].health); // Mushrooms, blue
           }  
           attroff(COLOR_PAIR(3));
       
@@ -290,6 +297,73 @@ int main()
                         }
                      }
             }
+          
+          /* Spider movement */  
+          
+          // Move across 
+        
+        if(!a.dead)
+        {  
+          if (!a.bounceH)
+          {
+           a.x++;
+          }
+                else 
+                {
+                 a.x--;
+                }
+         
+                if (a.x == xMax)
+                {
+                  a.bounceH = true; 
+                }
+                
+                      else if (a.x == 2)
+                      {
+                        a.bounceH = false;
+                      }
+               
+           // Move up and down
+            
+            if(!a.bounceV)
+            {
+              a.y--;
+            }
+               else
+               {
+                a.y++;
+               }
+                   
+            if (a.y == 33)
+            {
+              a.bounceV = true;
+            }
+               else if (a.y == 42)
+               {
+                a.bounceV = false;
+               }
+        }
+          
+          /* Spider collision detection */
+          
+          if (a.y == p1.y && a.x == p1.x)
+          {
+            score -= 100;
+            if (score == -500)
+            {
+             gameOver = true;
+             endScore = score;
+            }
+          }
+          
+         if (a.y == s.y && a.x == s.x)
+         {
+              mvprintw(a.y, a.x, "~");
+              a.dead = true;
+              a.y = -10;
+              a.x = -10;
+         }
+        
                
          /* Mushroom collision detection */
          
@@ -425,6 +499,9 @@ int main()
         mvprintw(p1.y, p1.x, "<o>"); // Player, green 
         attroff(COLOR_PAIR(2));
         mvaddstr(c.y, c.x, c.body); // Centipede, red
+        attron(COLOR_PAIR(a.health));
+        mvprintw(a.y, a.x, "X");
+        attroff(COLOR_PAIR(a.health));
         
         /* Print second centipede */
         if (split)
