@@ -219,7 +219,7 @@ int main()
                  }
             }
                   
-                  else // While in user area, loop
+                  else // Loop while in user area
                      {
                         if (c.x == xMax-c.end)
                         {
@@ -390,7 +390,7 @@ int main()
                   {
                    a.bounceV = false;
                   }
-          }
+               }
           
           /* Spider collision detection */
           
@@ -418,7 +418,7 @@ int main()
          
          for(int i = 0; i < 30; i++)
          {
-             // Bullets
+             // Bullet detection
              
              if (s.x == m[i].x && s.y == m[i].y)
              {
@@ -437,7 +437,7 @@ int main()
                 }
              }
              
-             // Centipede
+             // Centipede detection
              
              if (c.d == 1)
              { 
@@ -451,7 +451,7 @@ int main()
              {
                if (c.x == m[i].x && c.y == m[i].y)
                {
-                  c.d *= -1; // Change centipede direction
+                  c.d = 1; // Change centipede direction
                   c.y += 1; // Move down the screen
                }
              }
@@ -459,7 +459,7 @@ int main()
               
               if (cSub.d == 1)
               {
-               if(cSub.x == m[i].x && cSub.y == m[i].y)
+               if(cSub.x+cSub.end-1 == m[i].x && cSub.y == m[i].y)
                {
                   cSub.d *= -1;
                   cSub.y += 1;
@@ -469,9 +469,8 @@ int main()
               {
                if (cSub.x == m[i].x && cSub.y == m[i].y)
                {
-                  cSub.d *= -1; 
-                  c.y += 1;
-               
+                  cSub.d = 1; 
+                  cSub.y += 1;
                }
               }
           
@@ -557,10 +556,11 @@ int main()
         {            
                      attron(COLOR_PAIR(4));
                      mvaddstr(cSub.y, cSub.x , cSub.body); // Magenta
-                     attroff(COLOR_PAIR(4);
+                     attroff(COLOR_PAIR(4));
+                     
+      
                             
-                       /* Direction Controls */
-                                                    
+                            
                        if (!cSub.reachedEnd)
                         {
                         
@@ -585,7 +585,7 @@ int main()
                              }
                         }
                      
-                     else // While in user area, loop
+                     else // Loop while in user area
                         {
                            if (cSub.x == xMax-cSub.end)
                            {
