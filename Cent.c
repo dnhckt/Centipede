@@ -36,7 +36,8 @@
                          > Centipede can skip over some mushrooms if they are too close together
                          > Centipede sometimes can slip through the edge of the game window.                                                                 
                          > Bullet resets if user presses space before it makes impact.   
-                         > First body shot to centipede after split will not remove a body piece.        
+                         > First body shot to centipede after split will not remove a body piece.  
+                         > Centipede sometimes will not split when shot       
 */
 
 // Struct for the player character
@@ -348,6 +349,7 @@ int main()
           
           /* Spider movement */  
           
+           usleep(5000);
            // Move across 
            
            if(!a.dead)
@@ -604,6 +606,8 @@ int main()
                         
                        }  
         }      
+        
+        // Message
         
         mvprintw(0, 2, "Welcome to Centipede | WASD keys to move | Spacebar to shoot | P to exit | Score: %d", score);
         mvprintw(1, 1, " ------------------------------------------------------------------------------------");
